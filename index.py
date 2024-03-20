@@ -13,7 +13,7 @@ with open(input_songs_path, encoding="utf-8") as input_song_list_file:
     song_generator = SongGenerator(
         input_template_file_path=template_path,
         input_song_list=input_song_list,
-        content_max_length=25,
+        content_max_length=112,
     )
     song_generator.generate()
     song_generator.save(output_songs_path)

@@ -45,12 +45,28 @@ class SongGenerator:
             deleted_shape_count += 1
         return copied_slide
 
-    def update_placeholder_content(self, slide, placeholder, content):
-        for shape in slide.shapes:
-            for paragraph in shape.text_frame.paragraphs:
-                for run in paragraph.runs:
-                    if run.text == f"<{placeholder}>":
-                        run.text = content
+    def delete_paragraph(self, paragraph):
+        p = paragraph._p
+        parent_element = p.getparent()
+        parent_element.remove(p)
+
+    def delete_run(self, run):
+        r = run._r
+        r.getparent().remove(r)
+
+    def update_placeholder_content(self, slide, placeholder, content, title):
+        try:
+            for shape in slide.shapes:
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if run.text == f"<{placeholder}>":
+                            if content == "" or content == None:
+                                self.delete_run(run)
+                            else:
+                                run.text = content
+                            return
+        except Exception as e:
+            print(f"Error update_placeholder_content: title:{title}; content:{content}")
 
     def new_slide(self):
         slide_layout = self.presentation.slide_layouts[0]
@@ -64,32 +80,40 @@ class SongGenerator:
         for input_song in self.input_song_list:
             slide_idx += 1
             title_slide = self.duplicate_slide(self.presentation, 0)
-            self.update_placeholder_content(title_slide, "type", input_song["type"])
-            self.update_placeholder_content(title_slide, "title", input_song["title"])
+            self.update_placeholder_content(
+                title_slide, "type", input_song["type"], input_song["title"]
+            )
+            self.update_placeholder_content(
+                title_slide, "title", input_song["title"], input_song["title"]
+            )
             start_idx = 0
             for input_content in input_song["content"]:
                 while True:
-                    next_content = input_content[start_idx:]
-                    end_idx = (
-                        len(next_content)
-                        if len(next_content) < self.content_max_length
-                        else self.content_max_length
-                    )
-                    if self.content_max_length < len(next_content):
-                        last_c = next_content[self.content_max_length]
-                        if last_c != " ":
-                            tmp: str = next_content[:end_idx][::-1]
-                            end_idx = self.content_max_length - tmp.index(" ")
+                    slide_content = input_content[start_idx:]
+                    if len(slide_content.split(" ")) > 25:
+                        end_idx = (
+                            len(slide_content)
+                            if len(slide_content) < self.content_max_length
+                            else self.content_max_length
+                        )
+                        if self.content_max_length < len(slide_content):
+                            last_c = slide_content[self.content_max_length]
+                            if last_c != " ":
+                                tmp: str = slide_content[:end_idx][::-1]
+                                end_idx = self.content_max_length - tmp.index(" ")
 
-                    slide_content = next_content[:end_idx].strip()
-                    print(f"\nslide {slide_idx}")
-                    print(f"length: {len(slide_content)}")
-                    print(f"words: {len(slide_content.split(' '))}")
+                        slide_content = slide_content[:end_idx]
+                    print(
+                        f"slide:{slide_idx}:{len(slide_content.split(' '))}:{len(slide_content)}"
+                    )
                     content_slide = self.duplicate_slide(self.presentation, 1)
                     self.update_placeholder_content(
-                        content_slide, "content", slide_content
+                        content_slide,
+                        "content",
+                        slide_content.strip(),
+                        input_song["title"],
                     )
-                    start_idx = start_idx + end_idx
+                    start_idx = start_idx + len(slide_content)
                     slide_idx += 1
                     if start_idx >= len(input_content):
                         break

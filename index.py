@@ -7,7 +7,7 @@ output_songs_path = "output/songs.pptx"
 template_path = "template/template_1.pptx"
 
 with open(input_songs_path, encoding="utf-8") as input_song_list_file:
-    input_song_list = json.load(input_song_list_file)[:5]
+    input_song_list = json.load(input_song_list_file)
     print(f"Number of songs: {len(input_song_list)}")
     print("Generating...")
     song_generator = SongGenerator(
